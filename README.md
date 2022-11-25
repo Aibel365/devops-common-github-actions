@@ -1,3 +1,3 @@
-# Aibel custom actions
+# Aibel custom github actions
 
 Add some description here ...
