@@ -20,7 +20,7 @@ on:
         type: string
         description: File path to dockerfile to build.
       target:
-        required: true
+        required: false
         type: string
         description: Image target to build.
       build_args:
