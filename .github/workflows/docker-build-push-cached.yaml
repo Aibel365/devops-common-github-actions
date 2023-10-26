@@ -144,6 +144,7 @@ jobs:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
           tags: type=raw,${{ inputs.tags }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          run: echo ${{ inputs.tags }}
 
       - name: Login registries
         if: env.has_registries
@@ -188,6 +189,7 @@ jobs:
           # And: https://github.com/docker/buildx#--cache-tonametypetypekeyvalue
           cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
           outputs: ${{ inputs.upload_artefact && format('type=docker,dest=/tmp/{0}', inputs.repository) || null}}
+          run: echo ${{ steps.meta.outputs.tags }}
 
       - name: Upload artifact
         if: inputs.upload_artefact
