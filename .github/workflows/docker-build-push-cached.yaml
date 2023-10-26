@@ -141,7 +141,7 @@ jobs:
         uses: docker/metadata-action@v5
         if: inputs.push
         with:
-          images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}:${{ inputs.tags }}"
+          images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Login registries
