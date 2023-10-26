@@ -138,7 +138,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v3.7.0
         if: inputs.push
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
@@ -187,9 +187,8 @@ jobs:
           # More: https://github.com/moby/buildkit#--export-cache-options
           # And: https://github.com/docker/buildx#--cache-tonametypetypekeyvalue
           cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
-          outputs: ${{ inputs.upload_artefact && format('type=docker,dest=/tmp/{0}', inputs.repository) || null}}
-          run: echo ${{ steps.meta.outputs.tags }}
-
+          outputs: ${{ inputs.upload_artefact && format('type=docker,dest=/tmp/{0}', inputs.repository) || null}}         
+          
       - name: Upload artifact
         if: inputs.upload_artefact
         uses: actions/upload-artifact@v3
