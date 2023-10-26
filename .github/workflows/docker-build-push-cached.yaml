@@ -90,14 +90,14 @@ jobs:
     outputs:
       artefact_name: ${{ steps.set_outputs.outputs.artefact_name }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}
@@ -138,7 +138,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v3.7.0
+        uses: docker/metadata-action@v5.0
         if: inputs.push
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
