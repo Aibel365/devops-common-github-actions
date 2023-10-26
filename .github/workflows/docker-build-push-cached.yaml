@@ -125,7 +125,7 @@ jobs:
             images+="${registries[i]}/${REPOSITORY},"
           done
 
-          echo "images=$images" >> $GITHUB_OUTPUT
+          echo "::set-output name=images::$images"
           echo -e "Images: $images"
 
       - name: Check parsed images
@@ -210,4 +210,4 @@ jobs:
         id: set_outputs
         if: inputs.upload_artefact
         run: |          
-          echo "artefact_name=${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}-${{ inputs.target }}" >> $GITHUB_OUTPUT
+          echo "::set-output name=artefact_name::${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}-${{ inputs.target }}"
