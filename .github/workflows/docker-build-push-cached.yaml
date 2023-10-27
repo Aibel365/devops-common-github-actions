@@ -122,7 +122,7 @@ jobs:
 
           for i in "${!registries[@]}"; do
             echo "parsing registry ${registries[i]}"
-            images+="${registries[i]}/${REPOSITORY},"
+            images+="${registries[i]}/${REPOSITORY}"
           done
 
           echo "images=$images" >> $GITHUB_OUTPUT
