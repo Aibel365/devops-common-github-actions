@@ -148,7 +148,7 @@ jobs:
           flavor: | 
             latest=false
             prefix=
-            siffix=
+            suffix=
         
       - name: Login registries
         if: env.has_registries
@@ -177,7 +177,7 @@ jobs:
       ### Build (and potentially push) image ###
 
       - name: Build and Push image
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v5
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.file }}
