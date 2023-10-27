@@ -138,12 +138,17 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v3.7.0
+        uses: docker/metadata-action@v5
         if: inputs.push
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
-          tags: ${{ inputs.tags }}           
+          tags: |
+            type=samver,pattern={{raw}},value=${{ inputs.tags }}           
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          flavor: | 
+            latest=false
+            prefix=
+            siffix=
         
       - name: Login registries
         if: env.has_registries
