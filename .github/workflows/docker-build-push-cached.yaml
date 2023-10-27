@@ -137,7 +137,7 @@ jobs:
           echo -e $images
         
       - name: Print tag
-        if: inputs.push
+        id: print
         run: echo ${{ inputs.tags }}
 
       - name: Docker meta
