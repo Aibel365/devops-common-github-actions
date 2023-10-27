@@ -135,28 +135,24 @@ jobs:
         run: |
           echo $images
           echo -e $images
-        
-      - name: Print tag
-        id: print
-        run: echo ${{ inputs.tags }}
-
+      
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
         if: inputs.push
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
-          tags: type=semver,pattern={{raw}},value={{inputs.tags}}           
+          tags: type=semver,pattern={{raw}},value=${{inputs.tags}}           
           flavor: | 
-            latest=false
+            latest=auto
             prefix=
             suffix=
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Print image
+        id: image
+        run: echo ${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}} ":" ${{ inputs.tags }}
 
-      - name: Print meta tag
-        id: print-meta
-        run: echo ${{ steps.meta.outputs.tags }}
-        
       - name: Login registries
         if: env.has_registries
         shell: bash
