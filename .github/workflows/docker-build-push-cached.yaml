@@ -147,7 +147,7 @@ jobs:
       
       - name: Print image
         id: image
-        run: echo ${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}":"${{ inputs.tags }}
+        run: echo ${{ steps.parse_image_names.outputs.images }}:${{ inputs.tags }}
 
       - name: Login registries
         if: env.has_registries
