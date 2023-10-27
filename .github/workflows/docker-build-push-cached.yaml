@@ -152,6 +152,10 @@ jobs:
             prefix=
             suffix=
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print meta tag
+        id: print-meta
+        run: echo ${{ steps.meta.outputs.tags }}
         
       - name: Login registries
         if: env.has_registries
