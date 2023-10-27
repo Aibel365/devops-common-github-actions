@@ -142,7 +142,12 @@ jobs:
         if: inputs.push
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
-          tags: type=semver,pattern=${{inputs.tags}},value=${{inputs.tags}}           
+          tags: |
+            type=raw,value=${{inputs.tags}}
+          flavor: | 
+            latest=false
+            prefix=
+            suffix=        
           github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Print image
