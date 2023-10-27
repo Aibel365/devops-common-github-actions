@@ -143,11 +143,13 @@ jobs:
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
           tags: |
-            ${{inputs.tags}}
+            type=raw,value=${{inputs.tags}},enable=true,priority=200
           flavor: | 
-            latest=false
+            latest=auto
             prefix=
-            suffix=        
+            prefixLatest=false
+            suffix=
+            suffixLatest=false       
           github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Print image
