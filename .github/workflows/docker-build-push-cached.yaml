@@ -125,10 +125,8 @@ jobs:
             images+="${registries[i]}/${REPOSITORY},"
           done
 
-          images = ${images::-1}
-
-          echo "images=$images" >> $GITHUB_OUTPUT
-          echo -e "Images: $images"
+          echo "images=${images%?}" >> $GITHUB_OUTPUT
+          echo -e "Images: ${images%?}"
 
       - name: Check parsed images
         if: env.has_registries
