@@ -152,7 +152,9 @@ jobs:
       
       - name: Print image
         id: image
-        run: echo '${{ steps.parse_image_names.outputs.images }}:${{ inputs.tags }}'
+        run: |
+          echo ${{ steps.parse_image_names.outputs.images }}
+          echo ${{ inputs.tags }}
 
       - name: Login registries
         if: env.has_registries
