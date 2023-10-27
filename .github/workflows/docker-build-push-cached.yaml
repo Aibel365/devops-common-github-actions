@@ -125,7 +125,7 @@ jobs:
             images+="${registries[i]}/${REPOSITORY},"
           done
 
-          images = ${images:0:size-1}
+          images = ${images::-1}
 
           echo "images=$images" >> $GITHUB_OUTPUT
           echo -e "Images: $images"
