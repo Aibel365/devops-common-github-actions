@@ -143,15 +143,11 @@ jobs:
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
           tags: type=semver,pattern={{raw}},value=${{inputs.tags}}           
-          flavor: | 
-            latest=auto
-            prefix=
-            suffix=
           github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Print image
         id: image
-        run: echo ${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}} ":" ${{ inputs.tags }}
+        run: echo ${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}":"${{ inputs.tags }}
 
       - name: Login registries
         if: env.has_registries
