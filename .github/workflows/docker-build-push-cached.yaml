@@ -147,9 +147,7 @@ jobs:
           flavor: | 
             latest=auto
             prefix=
-            prefixLatest=false
-            suffix=
-            suffixLatest=false       
+            suffix=       
           github-token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Print image
