@@ -135,6 +135,10 @@ jobs:
         run: |
           echo $images
           echo -e $images
+        
+      - name: Print tag
+        if: inputs.push
+        run: echo ${{ inputs.tags }}
 
       - name: Docker meta
         id: meta
