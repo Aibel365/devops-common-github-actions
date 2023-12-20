@@ -102,7 +102,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Update version
-        if: ${{ inputs.push }}
+        if: ${{ inputs.display_version }}
         uses: bluwy/substitute-string-action@v2.0.1
         with:
           _input-file: "index.html"
@@ -111,7 +111,7 @@ jobs:
           vers: ${{inputs.tags}}
 
       - name: echo file
-        if: ${{ inputs.push }}
+        if: ${{ inputs.display_version }}
         run: cat index.html
 
       - name: Cache Docker layers
