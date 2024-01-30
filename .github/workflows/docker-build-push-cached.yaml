@@ -100,9 +100,6 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          oci-mediatypes: false
-          provenance: false
 
       - name: Update version
         if: ${{ inputs.display_version }}
