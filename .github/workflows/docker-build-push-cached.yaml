@@ -209,7 +209,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           secrets: ${{ secrets.DOCKER_SECRETS }}
           cache-from: type=local,src=/tmp/.buildx-cache
-          oci-mediatypes: false
           provenance: false
           # Note the mode=max here
           # More: https://github.com/moby/buildkit#--export-cache-options
