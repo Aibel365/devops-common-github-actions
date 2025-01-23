@@ -215,7 +215,7 @@ jobs:
 
       - name: Upload artifact
         if: inputs.upload_artefact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}-${{ inputs.target }}
           path: /tmp/${{ inputs.repository }}
