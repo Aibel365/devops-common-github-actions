@@ -101,6 +101,9 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: replace token in config file
+        run: sed -i "s|GH_PAT|${{ secrets.GH_PAT }}|g" ./app/NuGet.Config
+
       - name: Update version
         if: ${{ inputs.display_version }}
         uses: bluwy/substitute-string-action@v2.0.1
@@ -213,25 +216,4 @@ jobs:
           cache-to: type=local,mode=max,dest=/tmp/.buildx-cache-new
           outputs: ${{ inputs.upload_artefact && format('type=docker,dest=/tmp/{0}', inputs.repository) || null}}
 
-      - name: Upload artifact
-        if: inputs.upload_artefact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}-${{ inputs.target }}
-          path: /tmp/${{ inputs.repository }}
-          retention-days: 1
-
-      # Currently, cache entries are not removed using local cache: https://github.com/docker/build-push-action/issues/252
-      # Clean and move in new cache, in order to keep cache size small (avoid build crashing because of exceeding max docker cache size)
-      # Can later on opt for github actions (https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#github-cache)
-      #   but it is currently experimental.
-      - name: Move buildx cache
-        run: |
-          rm -rf /tmp/.buildx-cache
-          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-
-      - name: Set outputs
-        id: set_outputs
-        if: inputs.upload_artefact
-        run: |
-          echo "artefact_name=${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}-${{ inputs.target }}" >> $GITHUB_OUTPUT
+  
