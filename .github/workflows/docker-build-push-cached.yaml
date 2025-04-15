@@ -203,6 +203,7 @@ jobs:
       - name: Build and Push image
         uses: docker/build-push-action@v5
         with:
+          GH_PAT: ${{ secrets.GH_PAT }}
           context: ${{ inputs.context }}
           file: ${{ inputs.file }}
           builder: ${{ steps.buildx.outputs.name }}
