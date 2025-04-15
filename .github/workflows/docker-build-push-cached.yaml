@@ -101,12 +101,6 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Replace password in nuget.config
-        run: sed -i "s|${{ secrets.GH_PAT }}|${{ secrets.GH_PAT }}|g" ./app/NuGet.Config
-      
-      - name: Set up NuGet
-        run: dotnet nuget add source --username Holt-e --password ${{ secrets.GH_PAT }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/Aibel365/index.json"
-
       - name: Update version
         if: ${{ inputs.display_version }}
         uses: bluwy/substitute-string-action@v2.0.1
