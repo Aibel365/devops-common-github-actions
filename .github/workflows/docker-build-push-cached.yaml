@@ -37,6 +37,11 @@ on:
         type: boolean
         description: Whether to push image to registry.
         default: false
+      copa_scan:
+        required: false
+        type: boolean
+        description: Whether to scan & patch docker image.
+        default: true
       tags:
         required: false
         type: string
@@ -216,3 +221,18 @@ jobs:
           outputs: ${{ inputs.upload_artefact && format('type=docker,dest=/tmp/{0}', inputs.repository) || null}}
 
   
+      - name: Generate Trivy Report
+        uses: aquasecurity/trivy-action@master # 0.16.1
+        if: inputs.copa_scan
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: "json"
+          scan-type: "image"
+          output: "trivy-report.json"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: 'CRITICAL,HIGH,MEDIUM'
+        env:
+          TRIVY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_ACR_USERNAME }}
+          TRIVY_PASSWORD: ${{ secrets.CONTAINER_REGISTRY_ACR_PASSWORD }}
+        
