@@ -209,9 +209,7 @@ jobs:
           target: ${{ inputs.target }}
           push: ${{ inputs.push }}
           tags: ${{ steps.meta.outputs.tags }}
-          secrets: |
-            ${{ secrets.DOCKER_SECRETS }}
-            GH_PAT=${{ secrets.GH_PAT }}
+          secrets: ${{ secrets.DOCKER_SECRETS }}
           cache-from: type=local,src=/tmp/.buildx-cache
           provenance: false
           # Note the mode=max here
