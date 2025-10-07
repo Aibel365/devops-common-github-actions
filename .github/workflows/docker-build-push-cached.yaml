@@ -204,7 +204,7 @@ jobs:
         with:
           files: '["./app/nprmc"]'
         env:
-          TOKEN: ${{ GH_PAT }}
+          TOKEN: ${{ secrets.GH_PAT }}
            
 
       - name: Build and Push image
