@@ -203,6 +203,8 @@ jobs:
         uses: cschleiden/replace-tokens@v1
         with:
           files: '["./app/nprmc"]'
+          tokenPrefix: '{'
+          tokenSuffix: '}'
         env:
           TOKEN: ${{ secrets.GH_PAT }}
            
