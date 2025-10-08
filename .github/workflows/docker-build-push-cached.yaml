@@ -199,17 +199,14 @@ jobs:
 
       ### Build (and potentially push) image ###
 
-      
-      
-      
-      - name: Replace token in .nprmc with GH patch
-        uses: cschleiden/replace-tokens@v1
+      - name: Replace single file
+        uses: richardrigutins/replace-in-files@v2
         with:
-          files: '["./app/.npmrc"]'
-          tokenPrefix: '{'
-          tokenSuffix: '}'
-        env:
-          TOKEN: ${{ secrets.GH_PAT }}
+          files: './app/.npmrc'
+          search-text: 'TOKEN'
+          replacement-text: ${{ secrets.GH_PAT }}
+      
+          
            
 
       - name: Build and Push image
