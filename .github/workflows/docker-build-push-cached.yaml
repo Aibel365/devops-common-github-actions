@@ -226,7 +226,7 @@ jobs:
         if: inputs.copa_scan
         with:
           image-ref: ${{ steps.meta.outputs.tags }}
-          format: "json"
+          format: "table"
           scan-type: "image"
           output: "trivy-report.json"
           ignore-unfixed: true
