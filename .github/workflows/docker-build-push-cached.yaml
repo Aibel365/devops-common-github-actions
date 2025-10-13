@@ -199,15 +199,7 @@ jobs:
 
       ### Build (and potentially push) image ###
 
-      - name: Replace single file
-        uses: richardrigutins/replace-in-files@v2
-        with:
-          files: './app/.npmrc'
-          search-text: 'TOKEN'
-          replacement-text: ${{ secrets.GH_PAT }}
-      
-          
-           
+            
 
       - name: Build and Push image
         uses: docker/build-push-action@v5
