@@ -236,3 +236,17 @@ jobs:
           TRIVY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_ACR_USERNAME }}
           TRIVY_PASSWORD: ${{ secrets.CONTAINER_REGISTRY_ACR_PASSWORD }}
         
+
+      - name: Patch the docker image
+        if: inputs.copa_scan && steps.vuln_count.outputs.vuln_count > 0
+        id: copa_patch
+        run: |
+          wget https://github.com/project-copacetic/copacetic/releases/download/v${COPA_VERSION}/copa_${COPA_VERSION}_linux_amd64.tar.gz
+          tar -xzf copa_${COPA_VERSION}_linux_amd64.tar.gz
+          chmod +x copa
+
+          docker buildx create --use --name builder
+          ./copa patch -i ${{ steps.meta.outputs.tags }} -r report.json -t ${{ steps.meta.outputs.version }}
+          echo "copa_patch=true" >> $GITHUB_OUTPUT
+        env:
+          COPA_VERSION: 0.6.0
