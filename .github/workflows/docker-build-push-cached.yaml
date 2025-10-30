@@ -236,6 +236,12 @@ jobs:
           TRIVY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_ACR_USERNAME }}
           TRIVY_PASSWORD: ${{ secrets.CONTAINER_REGISTRY_ACR_PASSWORD }}
         
+      - name: Check vulnerability count 
+        id: vuln_count 
+        run: | 
+           report_file="trivy-report.json" 
+           vuln_count=$(jq 'if .Results then [.Results[] | select(.Class=="os-pkgs" and .Vulnerabilities!=null) | .Vulnerabilities[]] | length else 0 end' "$report_file") 
+           echo "vuln_count=$vuln_count" >> $GITHUB_OUTPUT 
 
       - name: Patch the docker image
        # if: inputs.copa_scan && steps.vuln_count.outputs.vuln_count > 0
