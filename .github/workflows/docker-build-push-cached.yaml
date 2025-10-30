@@ -241,8 +241,8 @@ jobs:
        # if: inputs.copa_scan && steps.vuln_count.outputs.vuln_count > 0
         id: copa_patch
         run: |
-          echo ${{ github.event.inputs.copa_scan }}
-          echo ${{ steps.vuln_count.outputs.vuln_count }}
+          echo "${{ github.event.inputs.copa_scan }}"
+          echo "${{ steps.vuln_count.outputs.vuln_count }}"
           wget https://github.com/project-copacetic/copacetic/releases/download/v${COPA_VERSION}/copa_${COPA_VERSION}_linux_amd64.tar.gz
           tar -xzf copa_${COPA_VERSION}_linux_amd64.tar.gz
           chmod +x copa
