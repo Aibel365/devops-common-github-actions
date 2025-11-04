@@ -1,0 +1,14 @@
+vulnerability:
+  # Same as '--ignore-status'
+  ignore-status: []
+
+  # Same as '--ignore-unfixed'
+  ignore-unfixed: true
+
+  # Same as '--vuln-severity-source'
+  severity-source:
+   - auto
+
+  block-severities:
+   - HIGH
+   - CRITICAL
