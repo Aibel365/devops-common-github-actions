@@ -251,3 +251,9 @@ jobs:
           echo "copa_patch=true" >> $GITHUB_OUTPUT
         env:
           COPA_VERSION: 0.6.0
+
+
+      - name: Push the patched image
+        if: inputs.copa_scan
+        run: |
+          docker push ${{steps.parse_image_names.outputs.images }}:${{ steps.meta.outputs.version }}
