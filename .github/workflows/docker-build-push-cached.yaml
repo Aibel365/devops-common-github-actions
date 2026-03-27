@@ -125,7 +125,7 @@ jobs:
         run: cat index.html
 
       - name: Cache Docker layers
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}
