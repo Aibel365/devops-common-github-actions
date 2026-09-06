@@ -104,15 +104,19 @@ jobs:
         with:
           node-version: 24
       - name: Source - npm install
+        working-directory: ${{ inputs.context }}
         run: npm ci
 
       - name: Source - test --if-present
+        working-directory: ${{ inputs.context }}
         run: npm run test --if-present
 
       - name: Source - lint --if-present
+        working-directory: ${{ inputs.context }}
         run: npm run lint --if-present
 
       - name: Source - format --if-present
+        working-directory: ${{ inputs.context }}
         run: npm run format --if-present
 
   build-and-push:
