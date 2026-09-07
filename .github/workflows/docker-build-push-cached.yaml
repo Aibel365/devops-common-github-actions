@@ -113,7 +113,7 @@ jobs:
       
       - name: Update version
         if: ${{ inputs.display_version }}
-        uses: bluwy/substitute-string-action@v
+        uses: bluwy/substitute-string-action@v4
         with:
           _input-file: "index.html"
           _output-file: "index.html"
