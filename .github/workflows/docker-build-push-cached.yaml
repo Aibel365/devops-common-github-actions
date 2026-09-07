@@ -8,6 +8,11 @@ on:
         type: boolean
         default: false
         description: If displaying version number
+      version_file:
+        required: false
+        type: string
+        default: index.html
+        description: Path (relative to the repository root) of the file containing the %%vers%% placeholder to substitute. Only used when display_version is true.
       repository:
         required: true
         type: string
@@ -115,14 +120,14 @@ jobs:
         if: ${{ inputs.display_version }}
         uses: bluwy/substitute-string-action@v4
         with:
-          _input-file: "index.html"
-          _output-file: "index.html"
+          _input-file: ${{ inputs.version_file }}
+          _output-file: ${{ inputs.version_file }}
           _format-key: "%%key%%"
           vers: ${{inputs.tags}}
 
       - name: echo file
         if: ${{ inputs.display_version }}
-        run: cat index.html
+        run: cat "${{ inputs.version_file }}"
 
       - name: Cache Docker layers
         uses: actions/cache@v5
