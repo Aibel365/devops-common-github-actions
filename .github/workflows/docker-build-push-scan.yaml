@@ -132,6 +132,9 @@ jobs:
       has_registries: inputs.push && secrets.REGISTRY_SERVER_URLS
     outputs:
       artefact_name: ${{ steps.set_outputs.outputs.artefact_name }}
+      image_tags: ${{ steps.meta.outputs.tags }}
+      image_version: ${{ steps.meta.outputs.version }}
+      images: ${{ steps.parse_image_names.outputs.images }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
@@ -262,7 +265,8 @@ jobs:
       uses: aquasecurity/trivy-action@master # 0.16.1
       if: inputs.copa_scan
       with:
-        image-ref: ${{ steps.meta.outputs.tags }}
+        image-ref: ${{ needs.build-and-push.outputs.image_tags }}
+      # image-ref: ${{ steps.meta.outputs.tags }}
         format: "json"
         scan-type: "image"
         output: "trivy-report.json"
@@ -284,8 +288,9 @@ jobs:
         tar -xzf copa_${COPA_VERSION}_linux_amd64.tar.gz
         chmod +x copa
         docker buildx create --use --name builder
-        ./copa patch -i ${{ steps.meta.outputs.tags }} -r trivy-report.json -t ${{ steps.meta.outputs.version }}
+        ./copa patch -i ${{ needs.build-and-push.outputs.image_tags }} -r trivy-report.json -t ${{ needs.build-and-push.outputs.image_version }}
         echo "copa_patch=true" >> $GITHUB_OUTPUT
+      # ./copa patch -i ${{ steps.meta.outputs.tags }} -r trivy-report.json -t ${{ steps.meta.outputs.version }}
       env:
         COPA_VERSION: 0.6.0
 
@@ -293,4 +298,5 @@ jobs:
     - name: Push the patched image
       if: inputs.copa_scan
       run: |
-        docker push ${{steps.parse_image_names.outputs.images }}:${{ steps.meta.outputs.version }}
+        docker push ${{ needs.build-and-push.outputs.images }}:${{ needs.build-and-push.outputs.image_version }}
+      # docker push ${{steps.parse_image_names.outputs.images }}:${{ steps.meta.outputs.version }}
