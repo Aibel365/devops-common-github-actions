@@ -270,11 +270,9 @@ jobs:
           ignore-unfixed: true
           vuln-type: "os,library"
           trivy-config: "copa-policy.yaml"
-          
         env:
           TRIVY_USERNAME: ${{ secrets.CONTAINER_REGISTRY_ACR_USERNAME }}
           TRIVY_PASSWORD: ${{ secrets.CONTAINER_REGISTRY_ACR_PASSWORD }}
-        
      
 
       - name: Patch the docker image
