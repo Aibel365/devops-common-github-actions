@@ -1,0 +1,31 @@
+on:
+  workflow_call:
+
+jobs:
+  detect-build-ecosystem:
+    runs-on: ubuntu-latest
+    outputs:
+      is_dotnet: ${{ steps.detect.outputs.is_dotnet }}
+      is_node:   ${{ steps.detect.outputs.is_node }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect ecosystem via manifest files
+        id: detect
+        run: |
+          # Detect .NET (checks for any .csproj file recursively)
+          if find . -name "*.csproj" -print -quit | grep -q .; then
+            echo "is_dotnet=true" >> "$GITHUB_OUTPUT"
+            echo "Detected .NET ecosystem."
+          else
+            echo "is_dotnet=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          # Detect Node.js (checks for package.json in root)
+          if [ -f "package.json" ]; then
+            echo "is_node=true" >> "$GITHUB_OUTPUT"
+            echo "Detected Node.js ecosystem."
+          else
+            echo "is_node=false" >> "$GITHUB_OUTPUT"
+          fi
