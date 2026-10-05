@@ -105,7 +105,7 @@ jobs:
     outputs:
       artefact_name: ${{ steps.set_outputs.outputs.artefact_name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Docker Buildx
         id: buildx
@@ -227,7 +227,7 @@ jobs:
 
   
       - name: Generate Trivy Report
-        uses: aquasecurity/trivy-action@master # 0.16.1
+        uses: aquasecurity/trivy-action@v0.36.0
         if: inputs.copa_scan
         with:
           image-ref: ${{ steps.meta.outputs.tags }}
