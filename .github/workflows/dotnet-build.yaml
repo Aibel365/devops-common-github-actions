@@ -27,7 +27,7 @@ jobs:
       - name: .NET Restore
         run: dotnet restore app
       - name: Build
-        run: dotnet build -C Release --output ./build --no-restore ${{ input.PROJECT }}
+        run: dotnet build -C Release --output ./app/build --no-restore ${{ input.PROJECT }}
       - name: Test
         run: dotnet test -c Release app
       - name: Publish
