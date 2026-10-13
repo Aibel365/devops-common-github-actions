@@ -1,0 +1,88 @@
+name: Dependabot critical gate
+
+# Gate 2 of 2: blocks a PR while the repo has ANY open CRITICAL Dependabot
+# alert, whether or not this PR touched the affected package. Companion to
+# dependency-review.yaml, which only inspects the PR's own diff.
+
+on:
+    pull_request:
+        branches: [main, test]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+jobs:
+    critical-alerts:
+        name: Block on open critical Dependabot alerts
+        runs-on: ubuntu-latest
+        steps:
+            - name: Fetch open critical Dependabot alerts
+              shell: bash
+              env:
+                  # PAT with 'security_events' scope (classic) or 'Dependabot alerts:
+                  # read' (fine-grained). The default GITHUB_TOKEN cannot read these.
+                  #
+                  # Must be stored TWICE: as an Actions secret AND as a Dependabot
+                  # secret. Workflow runs on Dependabot's own PRs cannot see Actions
+                  # secrets, so without the Dependabot copy this gate hard-fails on
+                  # exactly the PRs it exists to guard.
+                  GH_TOKEN: ${{ secrets.DEPENDABOT_TOKEN }}
+                  REPO: ${{ github.repository }}
+              run: |
+                  set -euo pipefail
+
+                  if [ -z "${GH_TOKEN:-}" ]; then
+                    echo "::error::DEPENDABOT_TOKEN is not set for this run. Add it as BOTH an Actions secret and a Dependabot secret (Settings > Secrets and variables). Use a PAT with 'security_events' (classic) or 'Dependabot alerts: Read' (fine-grained)."
+                    exit 1
+                  fi
+
+                  # Fetch all open alerts (handles pagination). Capture errors so a 404
+                  # produces an actionable message instead of a bare "gh: Not Found".
+                  set +e
+                  raw="$(gh api --paginate \
+                    -H "Accept: application/vnd.github+json" \
+                    "/repos/${REPO}/dependabot/alerts?state=open&per_page=100" 2>gh_err.txt)"
+                  rc=$?
+                  set -e
+                  if [ "${rc}" -ne 0 ]; then
+                    echo "gh api call failed (exit ${rc}):"
+                    cat gh_err.txt
+                    if grep -qi "Not Found" gh_err.txt; then
+                      echo "::error::404 from the Dependabot alerts API for ${REPO}. Likely causes: (1) Dependabot alerts are disabled — enable them under Settings > Code security; (2) DEPENDABOT_TOKEN lacks 'Dependabot alerts: Read' or was not granted access to this repo; (3) the token needs org approval/SSO authorization for the ${REPO%%/*} org."
+                    fi
+                    exit 1
+                  fi
+
+                  printf '%s' "${raw}" | jq -s 'add // []' > all_alerts.json
+
+                  jq 'map(select(.security_advisory.severity == "critical"))' \
+                    all_alerts.json > critical_alerts.json
+
+                  count=$(jq 'length' critical_alerts.json)
+                  echo "Found ${count} open critical Dependabot alert(s)."
+
+                  # Write a summary table to the job's Step Summary.
+                  {
+                    echo "### Open critical Dependabot alerts: ${count}"
+                    echo ""
+                    if [ "${count}" -gt 0 ]; then
+                      echo "| Package | Ecosystem | Vulnerable range | Patched | Advisory |"
+                      echo "|---|---|---|---|---|"
+                      jq -r '.[] | "| \(.dependency.package.name) | \(.dependency.package.ecosystem) | \(.security_vulnerability.vulnerable_version_range) | \(.security_vulnerability.first_patched_version.identifier // "none") | [\(.security_advisory.ghsa_id)](\(.html_url)) |"' critical_alerts.json
+                      echo ""
+                      echo "Merging is blocked until every alert above is patched or dismissed."
+                    else
+                      echo "No open critical alerts. :white_check_mark:"
+                    fi
+                  } >> "${GITHUB_STEP_SUMMARY}"
+
+                  # Emit an error annotation per alert, then fail the check.
+                  jq -r '.[] | "::error title=CRITICAL Dependabot alert::\(.dependency.package.name) (\(.security_vulnerability.vulnerable_version_range)) — \(.security_advisory.summary) [\(.html_url)]"' critical_alerts.json || true
+
+                  if [ "${count}" -gt 0 ]; then
+                    echo "::error::${count} open critical Dependabot alert(s) — blocking merge."
+                    exit 1
+                  fi
+
+                  echo "No open critical alerts. Gate passed."
