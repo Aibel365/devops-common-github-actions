@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -27,7 +27,7 @@ jobs:
       - uses: marocchino/sticky-pull-request-comment@447031a6bb83f7438d890bb0136932be78342022
         # When the previous steps fails, the workflow would stop. By adding this
         # condition you can continue the execution with the populated error message.
-        if: always() && (steps.lint_pr_title.outputs.error_message != null) && (github.event.pull_request.head.repo.full_name == github.repository)
+        if: ${{ always() && steps.lint_pr_title.outputs.error_message != '' && github.event.pull_request.head.repo.full_name == github.repository }}
         with:
           header: pr-title-lint-error
           message: |
