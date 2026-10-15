@@ -6,6 +6,10 @@ name: Dependabot critical gate
 
 on:
   workflow_call:
+   secrets:
+      DEPENDABOT_TOKEN:
+        required: true
+
 
 permissions:
     contents: read
