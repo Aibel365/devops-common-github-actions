@@ -96,7 +96,7 @@ env:
 
 jobs:
   build-push-cache:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: ${{ inputs.environment_name }}
       url: ${{ inputs.environment_url }}

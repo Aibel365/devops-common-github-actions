@@ -3,7 +3,7 @@ on:
 
 jobs:
   detect-build-ecosystem:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       is_dotnet: ${{ steps.detect.outputs.is_dotnet }}
       is_node:   ${{ steps.detect.outputs.is_node }}
