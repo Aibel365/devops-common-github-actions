@@ -1,0 +1,71 @@
+name: Dependabot gate re-run
+
+# Companion to dependabot-critical-gate.yaml. A failed check never re-evaluates
+# on its own, so once a critical fix lands on test or main, PRs the gate
+# blocked stay red until someone pushes. This re-runs those failed gate jobs.
+#
+# Call it on push to test and main. Dependabot closes the alert a few minutes
+# AFTER the push to main, so also add a schedule to catch the alert closing:
+#
+#   on:
+#     push:
+#       branches: [test, main]
+#     schedule:
+#       - cron: "17 * * * *"
+#   jobs:
+#     rerun-dependabot-gate:
+#       uses: <org>/devops-common-github-actions/.github/workflows/dependabot-gate-rerun.yaml@main
+#       permissions:
+#         actions: write
+#         checks: read
+#         contents: read
+#         pull-requests: read
+
+on:
+  workflow_call:
+    inputs:
+      check-name:
+        description: Gate job name as shown in PR checks, without the caller's "<job> / " prefix.
+        type: string
+        default: Block on open critical Dependabot alerts
+
+permissions:
+    actions: write
+    checks: read
+    contents: read
+    pull-requests: read
+
+jobs:
+    rerun:
+        name: Re-run blocked Dependabot gates
+        runs-on: ubuntu-24.04
+        steps:
+            - name: Re-run failed gate jobs on open PRs
+              shell: bash
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  REPO: ${{ github.repository }}
+                  CHECK_NAME: ${{ inputs.check-name }}
+              run: |
+                  set -euo pipefail
+
+                  # Latest gate check run per open PR head; reusable-workflow jobs
+                  # are named "<caller job> / <gate job>", so match on the suffix.
+                  run_ids="$(gh api --paginate "/repos/${REPO}/pulls?state=open&per_page=100" --jq '.[].head.sha' \
+                    | while read -r sha; do
+                        gh api --paginate "/repos/${REPO}/commits/${sha}/check-runs?per_page=100" \
+                          | jq -r --arg name "${CHECK_NAME}" '.check_runs[]
+                              | select((.name == $name or (.name | endswith(" / " + $name))) and .conclusion == "failure")
+                              | .details_url | capture("/actions/runs/(?<id>[0-9]+)").id'
+                      done | sort -u)"
+
+                  if [ -z "${run_ids}" ]; then
+                    echo "No failed Dependabot gate runs on open PRs."
+                    exit 0
+                  fi
+
+                  for id in ${run_ids}; do
+                    echo "Re-running failed jobs of run ${id}"
+                    gh run rerun "${id}" --failed --repo "${REPO}" \
+                      || echo "::warning::Could not re-run run ${id} (still running, or older than 30 days)."
+                  done

@@ -3,6 +3,12 @@ name: Dependabot critical gate
 # Gate 2 of 2: blocks a PR while the repo has ANY open CRITICAL Dependabot
 # alert, whether or not this PR touched the affected package. Companion to
 # dependency-review.yaml, which only inspects the PR's own diff.
+#
+# Exception: an alert does not block a PR whose merge result removes the
+# vulnerable dependency. Alerts only track the default branch, so without this
+# the PR carrying a fix (and its test -> main promotion) would be blocked by
+# the very alert it closes. Pair with dependabot-gate-rerun.yaml so PRs that
+# were blocked get re-evaluated once the fix lands.
 
 on:
   workflow_call:
@@ -33,7 +39,13 @@ jobs:
                   # secrets, so without the Dependabot copy this gate hard-fails on
                   # exactly the PRs it exists to guard.
                   GH_TOKEN: ${{ secrets.DEPENDABOT_TOKEN }}
+                  # Used for the PR and dependency-graph compare calls, which
+                  # only need 'contents: read'.
+                  REPO_TOKEN: ${{ github.token }}
                   REPO: ${{ github.repository }}
+                  EVENT_NAME: ${{ github.event_name }}
+                  PR_NUMBER: ${{ github.event.pull_request.number }}
+                  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
               run: |
                   set -euo pipefail
 
@@ -42,12 +54,12 @@ jobs:
                     exit 1
                   fi
 
-                  # Fetch all open alerts (handles pagination). Capture errors so a 404
+                  # Fetch all open critical alerts (handles pagination). Capture errors so a 404
                   # produces an actionable message instead of a bare "gh: Not Found".
                   set +e
                   raw="$(gh api --paginate \
                     -H "Accept: application/vnd.github+json" \
-                    "/repos/${REPO}/dependabot/alerts?state=open&per_page=100" 2>gh_err.txt)"
+                    "/repos/${REPO}/dependabot/alerts?state=open&severity=critical&per_page=100" 2>gh_err.txt)"
                   rc=$?
                   set -e
                   if [ "${rc}" -ne 0 ]; then
@@ -64,30 +76,98 @@ jobs:
                   jq 'map(select(.security_advisory.severity == "critical"))' \
                     all_alerts.json > critical_alerts.json
 
-                  count=$(jq 'length' critical_alerts.json)
-                  echo "Found ${count} open critical Dependabot alert(s)."
+                  total=$(jq 'length' critical_alerts.json)
+                  echo "Found ${total} open critical Dependabot alert(s)."
 
-                  # Write a summary table to the job's Step Summary.
+                  # Diff the dependency graph of this PR's merge result against
+                  # the default branch, to spot alerts the PR itself fixes.
+                  echo '[]' > pr_diff.json
+                  if [ "${EVENT_NAME}" = "pull_request" ] && [ "${total}" -gt 0 ]; then
+                    # Re-resolve the merge commit rather than using github.sha, so
+                    # a re-run sees the base branch as it is NOW (e.g. after the
+                    # fix landed on test). 'mergeable' is null while GitHub is
+                    # still recomputing the merge commit.
+                    merge_sha=""
+                    for _ in 1 2 3 4 5; do
+                      pr="$(GH_TOKEN="${REPO_TOKEN}" gh api "/repos/${REPO}/pulls/${PR_NUMBER}" 2>/dev/null || echo '{}')"
+                      mergeable="$(jq -r '.mergeable' <<<"${pr}")"
+                      if [ "${mergeable}" = "true" ]; then
+                        merge_sha="$(jq -r '.merge_commit_sha // empty' <<<"${pr}")"
+                        break
+                      elif [ "${mergeable}" = "false" ]; then
+                        break
+                      fi
+                      sleep 3
+                    done
+                    merge_sha="${merge_sha:-${GITHUB_SHA}}"
+
+                    echo "Comparing dependencies ${DEFAULT_BRANCH}...${merge_sha}"
+                    if ! GH_TOKEN="${REPO_TOKEN}" gh api \
+                      "/repos/${REPO}/dependency-graph/compare/${DEFAULT_BRANCH}...${merge_sha}" \
+                      > pr_diff.json 2>gh_err.txt; then
+                      cat gh_err.txt
+                      echo "::warning::Could not compare dependencies against ${DEFAULT_BRANCH}; treating every critical alert as blocking."
+                      echo '[]' > pr_diff.json
+                    fi
+                  fi
+
+                  # An alert is fixed by this PR when the merge result removes the
+                  # package from the alert's manifest and does not add back a
+                  # version still affected by the same advisory.
+                  jq --slurpfile diff pr_diff.json '
+                    $diff[0] as $d
+                    | map(
+                        . as $a
+                        | ($a.dependency.package.name | ascii_downcase) as $name
+                        | [$d[] | select((.name | ascii_downcase) == $name and .manifest == $a.dependency.manifest_path)] as $changes
+                        | . + {fixed_by_pr: (
+                            any($changes[]; .change_type == "removed")
+                            and (any($changes[]; .change_type == "added"
+                                  and any(.vulnerabilities[]?; .advisory_ghsa_id == $a.security_advisory.ghsa_id)) | not)
+                          )}
+                      )' critical_alerts.json > classified_alerts.json
+
+                  jq 'map(select(.fixed_by_pr | not))' classified_alerts.json > blocking_alerts.json
+                  jq 'map(select(.fixed_by_pr))' classified_alerts.json > fixed_alerts.json
+                  count=$(jq 'length' blocking_alerts.json)
+                  fixed=$(jq 'length' fixed_alerts.json)
+                  echo "${fixed} alert(s) fixed by this PR, ${count} still blocking."
+
+                  alert_table() {
+                    echo "| Package | Ecosystem | Manifest | Vulnerable range | Patched | Advisory |"
+                    echo "|---|---|---|---|---|---|"
+                    jq -r '.[] | "| \(.dependency.package.name) | \(.dependency.package.ecosystem) | \(.dependency.manifest_path) | \(.security_vulnerability.vulnerable_version_range) | \(.security_vulnerability.first_patched_version.identifier // "none") | [\(.security_advisory.ghsa_id)](\(.html_url)) |"' "$1"
+                    echo ""
+                  }
+
+                  # Write summary tables to the job's Step Summary.
                   {
-                    echo "### Open critical Dependabot alerts: ${count}"
+                    echo "### Open critical Dependabot alerts blocking this PR: ${count}"
                     echo ""
                     if [ "${count}" -gt 0 ]; then
-                      echo "| Package | Ecosystem | Vulnerable range | Patched | Advisory |"
-                      echo "|---|---|---|---|---|"
-                      jq -r '.[] | "| \(.dependency.package.name) | \(.dependency.package.ecosystem) | \(.security_vulnerability.vulnerable_version_range) | \(.security_vulnerability.first_patched_version.identifier // "none") | [\(.security_advisory.ghsa_id)](\(.html_url)) |"' critical_alerts.json
-                      echo ""
+                      alert_table blocking_alerts.json
                       echo "Merging is blocked until every alert above is patched or dismissed."
+                      echo ""
                     else
-                      echo "No open critical alerts. :white_check_mark:"
+                      echo "No blocking critical alerts. :white_check_mark:"
+                      echo ""
+                    fi
+                    if [ "${fixed}" -gt 0 ]; then
+                      echo "### Critical alerts fixed by this PR: ${fixed}"
+                      echo ""
+                      alert_table fixed_alerts.json
+                      echo "These close automatically once the fix reaches ${DEFAULT_BRANCH}."
                     fi
                   } >> "${GITHUB_STEP_SUMMARY}"
 
-                  # Emit an error annotation per alert, then fail the check.
-                  jq -r '.[] | "::error title=CRITICAL Dependabot alert::\(.dependency.package.name) (\(.security_vulnerability.vulnerable_version_range)) — \(.security_advisory.summary) [\(.html_url)]"' critical_alerts.json || true
+                  jq -r '.[] | "::notice title=Fixed by this PR::\(.dependency.package.name) (\(.security_advisory.ghsa_id)) in \(.dependency.manifest_path)"' fixed_alerts.json || true
+
+                  # Emit an error annotation per blocking alert, then fail the check.
+                  jq -r '.[] | "::error title=CRITICAL Dependabot alert::\(.dependency.package.name) (\(.security_vulnerability.vulnerable_version_range)) — \(.security_advisory.summary) [\(.html_url)]"' blocking_alerts.json || true
 
                   if [ "${count}" -gt 0 ]; then
                     echo "::error::${count} open critical Dependabot alert(s) — blocking merge."
                     exit 1
                   fi
 
-                  echo "No open critical alerts. Gate passed."
+                  echo "No blocking critical alerts. Gate passed."
