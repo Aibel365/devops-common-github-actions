@@ -9,7 +9,7 @@ jobs:
       is_node:   ${{ steps.detect.outputs.is_node }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.4.0
 
       - name: Detect ecosystem via manifest files
         id: detect

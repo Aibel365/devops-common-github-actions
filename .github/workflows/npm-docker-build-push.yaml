@@ -98,9 +98,9 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.1.0
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 24
       - name: Source - npm install
@@ -137,15 +137,15 @@ jobs:
       images: ${{ steps.parse_image_names.outputs.images }}
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@v4.4.1
       
       - name: Update version
         if: ${{ inputs.display_version }}
-        uses: bluwy/substitute-string-action@v4
+        uses: bluwy/substitute-string-action@v4.0.0
         with:
           _input-file: "index.html"
           _output-file: "index.html"
@@ -157,7 +157,7 @@ jobs:
         run: cat index.html
 
       - name: Cache Docker layers
-        uses: actions/cache@v5
+        uses: actions/cache@v5.1.0
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ inputs.repository }}-${{ hashFiles(inputs.hash_files_template) }}-${{ github.sha }}
@@ -198,7 +198,7 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v6
+        uses: docker/metadata-action@v6.2.0
         if: inputs.push
         with:
           images: "${{ steps.parse_image_names.outputs.images }}${{inputs.use_dockerhub && format('{0}/{1}',secrets.DOCKERHUB_ORG,inputs.repository) ||''}}"
@@ -228,7 +228,7 @@ jobs:
           done
 
       - name: Login Dockerhub
-        uses: docker/login-action@v4
+        uses: docker/login-action@v4.8.0
         if: inputs.use_dockerhub && inputs.push
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -239,7 +239,7 @@ jobs:
             
 
       - name: Build and Push image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@v7.4.0
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.file }}

@@ -9,22 +9,34 @@ permissions:
   issues: write
 
 jobs:
+
+  verify-gh-action-lock:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - run: gh extension install github/gh-actions-lock --pin v0.4.1
+      - run: gh actions-lock --verify
+
   validate:
     runs-on: ubuntu-26.04
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v6.1.0
 
       #- name: Install GitHub CLI
       #  uses: cli/gh-action@v2
 
       - name: Validate PR title and commits
         id: lint_pr_title
-        uses: amannn/action-semantic-pull-request@04a8d177d951f6d3dff9f6fbfa336354c60a1112
+        uses: amannn/action-semantic-pull-request@v6.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: marocchino/sticky-pull-request-comment@447031a6bb83f7438d890bb0136932be78342022
+      - uses: marocchino/sticky-pull-request-comment@v3.0.0
         # When the previous steps fails, the workflow would stop. By adding this
         # condition you can continue the execution with the populated error message.
         if: ${{ always() && steps.lint_pr_title.outputs.error_message != '' && github.event.pull_request.head.repo.full_name == github.repository }}
@@ -41,7 +53,7 @@ jobs:
             ${{ steps.lint_pr_title.outputs.error_message }}
             ```
 
-      - uses: marocchino/sticky-pull-request-comment@447031a6bb83f7438d890bb0136932be78342022
+      - uses: marocchino/sticky-pull-request-comment@v3.0.0
         if: ${{ steps.lint_pr_title.outputs.error_message == null }}
         with:
           header: pr-title-lint-error
